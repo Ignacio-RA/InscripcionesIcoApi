@@ -1,0 +1,30 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "API para sistema de inscripciones de Ico",
+  "keywords": [
+    "express",
+    "mariadb",
+    "nodemon"
+  ],
+  "homepage": "https://github.com/Ignacio-RA/InscripcionesIcoApi#readme",
+  "bugs": {
+    "url": "https://github.com/Ignacio-RA/InscripcionesIcoApi/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ignacio-RA/InscripcionesIcoApi.git"
+  },
+  "author": "Eduardo Diaz",
+  "license": "ISC",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "server":"nodemon index.js"
+  },
+  
+  "dependencies": {
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14"
+  }
+}
