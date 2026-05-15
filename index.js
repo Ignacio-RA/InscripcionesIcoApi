@@ -1,6 +1,7 @@
 import express from "express"
 import router from "./routes/inicio_router.js"
 import db from "./config/db.js"
+import './models/relaciones.js';
 //Crear la aplicación
 const app = express()
 
@@ -9,13 +10,19 @@ app.use(express.urlencoded({extended:true}))
 app.use(express.json());
 
 //Conexión a la base de datos
-try {
-  await db.authenticate();
-  db.sync()
-  console.log("Conexion exitosa a la base de datos");
-} catch (error) {
-  console.log(error);
+const conectarDB = async () => {
+    try {
+        await db.authenticate();
+        
+        await db.sync(); 
+        
+        console.log("Conexion exitosa y tablas sincronizadas");
+    } catch (error) {
+        console.log("Error al conectar o sincronizar:", error);
+    }
 }
+
+conectarDB();
 
 //routing
 app.use("/", router)
