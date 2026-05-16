@@ -75,7 +75,111 @@ const registroAlumno = async (req, res) => {
     }
 }
 
+// Funcion para obtner todos los alumnos (READ)
+const obtenerAlumnos = async (req,res)=>{
+    try{
+        const alumnos = await Alumno.findAll({
+            atributes:['nmo_cuenta','ap_paterno','ap_materno','correo','generacion','semestre','turno','f_nacimiento','estado','edo_pago']
+        })
+        // se responde con un mensaje de texto de exito, la lista de usuarios y estatus 200 (OK)
+        return res.status(200).json({
+            msg: "Alumnos obtenidos exitosamente",
+            alumnos
+        })
+    }catch (error){
+        return res.status(500).json({
+            msg: "Hubo un error en el servidor, intente mas tarde."
+
+        })
+    }
+}
+
+// Funcion para obtner un alumno por su ID (READ)
+const obtenerAlumno = async (req,res)=>{
+    try{
+        const {id} = req.params
+        const alumno = await Alumno.findByPk( id, {
+            atributes:['nmo_cuenta','ap_paterno','ap_materno','correo','generacion','semestre','turno','f_nacimiento','estado','edo_pago']
+        })
+        // se responde con un mensaje de texto de exito, la lista de usuarios y estatus 200 (OK)
+        return res.status(200).json({
+            msg: "Alumno obtenidos exitosamente",
+            alumno
+        })
+    }catch (error){
+        return res.status(500).json({
+            msg: "Hubo un error en el servidor, intente mas tarde."
+
+        })
+    }
+}
+
+// Funcion para actualizar un allumno por su ID (UPDATE)
+const actualizarAlumno = async (req,res)=>{
+    const {id} = req.params
+
+    try {
+        
+        const alumno = await Alumno.findByPk(id)  
+        if (!alumno){
+            return res.status(404).json({
+                msg: "Alumno no encontrado"
+            })
+        }
+
+    await alumno.update(req.body)
+    //Se responde con mensaje de exito, el alumno y estatus 200 (OK)
+    return res.status(200).json({
+        msg: "Alumno actualizado exitosamente",
+        alumno
+    })
+
+    } catch (error) {
+        console.error("Error all actualizar:", error)
+        //Si el error es por duplicado (ej. el correo o nmo_cuenta ya existe)
+        if (error.name ==='SequelizeUniqueConstraintError'){
+            return res.status(400).json({
+                msg: "El correo o nmo_cuenta ya se encuentra registrado."
+            })
+        }
+        return res.status(500).json({
+                msg: "Hubo un error en el servidor, intentelo de nuevo más tarde."
+            })
+    }
+}
+
+// Funcion para eliminar un alumno por su ID (DELETE)
+const eliminarAlumno = async (req,res)=>{
+    const {id} = req.params
+
+    try {
+        
+        const alumno = await Alumno.findByPk(id)  
+        if (!alumno){
+            return res.status(404).json({
+                msg: "Alumno no encontrado"
+            })
+        }
+
+    await alumno.destroy()
+    //Se responde con mensaje de exito y estatus(OK)
+    return res.status(200).json({
+        msg: "Alumno eliminado exitosamente"  
+    })
+
+    } catch (error) {
+        console.error("Error al eliminar:", error)
+        return res.status(500).json({
+                msg: "Hubo un error en el servidor, intentelo de nuevo más tarde."
+            })
+    }
+}
+
 export {
     inicio,
-    registroAlumno
+    registroAlumno,
+    obtenerAlumnos,
+    obtenerAlumno,
+    actualizarAlumno,
+    eliminarAlumno
 }
