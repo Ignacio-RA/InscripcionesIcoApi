@@ -9,7 +9,8 @@ const Alumno = db.define('alumno', {
     },
     nmo_cuenta: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        unique: true
     },
     nombre: {
         type: DataTypes.STRING,
