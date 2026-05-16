@@ -9,7 +9,7 @@ const inicioHorario = (req, res) => {
     })
 }
 
-// Función para crear un nuevo horario (Create)
+// Función para crear un nuevo horario (CREATE)
 const registroHorario = async (req, res) => {
     try {
         const { 
@@ -18,7 +18,6 @@ const registroHorario = async (req, res) => {
         } = req.body
 
         // Validación y asignación por defecto para los días (Booleanos)
-        // Si no se envían en el body, se interpretan como 'false'
         const dias = {
             lunes: lunes === true || lunes === 'true',
             martes: martes === true || martes === 'true',
@@ -29,7 +28,7 @@ const registroHorario = async (req, res) => {
         }
 
         // Validación de horas (Deben estar presentes)
-        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]?$/; // Formato HH:MM o HH:MM:SS
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]?$/; // Formato HH:MM
         if (!hra_inicio || !timeRegex.test(hra_inicio)) {
             return res.status(400).json({
                 msg: "La hora de inicio es obligatoria y debe tener un formato válido (HH:MM)."
@@ -50,7 +49,6 @@ const registroHorario = async (req, res) => {
         }
 
         // Validación de modalidad (Basado en el ENUM 'Presencial' o 'En linea')
-        // Estandarizamos el texto para que coincida exactamente con las opciones del modelo
         let modalidadFormateada = null;
         if (modalidad) {
             const modClean = modalidad.trim().toLowerCase();
@@ -67,15 +65,14 @@ const registroHorario = async (req, res) => {
 
         // Creación del registro en la base de datos
         const nuevoHorario = await Horario.create({
-            ...dias, // Esparcimos los booleanos de los días ya normalizados
+            ...dias,
             hra_inicio,
             hra_fin,
-            salon: salon.trim().toUpperCase(), // Mantenemos la consistencia de mayúsculas en texto
+            salon: salon.trim().toUpperCase(),
             cupo: parseInt(cupo),
             modalidad: modalidadFormateada
         })
 
-        // Respuesta exitosa 201 (CREATED)
         return res.status(201).json({
             msg: "Horario registrado exitosamente",
             horario: {
@@ -90,7 +87,6 @@ const registroHorario = async (req, res) => {
     } catch (error) {
         console.error("error al registrar horario", error)
 
-        //Para evitar duplicacion del horario
         if (error.name === 'SequelizeUniqueConstraintError') {
             return res.status(400).json({
                 msg: "Este horario ya se encuentra registrado."
@@ -103,7 +99,155 @@ const registroHorario = async (req, res) => {
     }
 }
 
+// Función para obtener todos los horarios (READ)
+const obtenerHorarios = async (req, res) => {
+    try {
+        const horarios = await Horario.findAll({
+            attributes: [
+                'id_horario', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 
+                'hra_inicio', 'hra_fin', 'salon', 'cupo', 'modalidad'
+            ]
+        })
+        return res.status(200).json({
+            msg: "Horarios obtenidos exitosamente",
+            horarios
+        })
+    } catch (error) {
+        console.error("Error al obtener horarios:", error)
+        return res.status(500).json({
+            msg: "Hubo un error en el servidor, intente más tarde."
+        })
+    }
+}
+
+// Función para obtener un horario por su ID (READ)
+const obtenerHorario = async (req, res) => {
+    try {
+        const { id } = req.params
+        const horario = await Horario.findByPk(id, {
+            attributes: [
+                'id_horario', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 
+                'hra_inicio', 'hra_fin', 'salon', 'cupo', 'modalidad'
+            ]
+        })
+
+        if (!horario) {
+            return res.status(404).json({
+                msg: "Horario no encontrado"
+            })
+        }
+
+        return res.status(200).json({
+            msg: "Horario obtenido exitosamente",
+            horario
+        })
+    } catch (error) {
+        console.error("Error al obtener el horario:", error)
+        return res.status(500).json({
+            msg: "Hubo un error en el servidor, intente más tarde."
+        })
+    }
+}
+
+// Función para actualizar un horario por su ID (UPDATE)
+const actualizarHorario = async (req, res) => {
+    const { id } = req.params
+
+    try {
+        const horario = await Horario.findByPk(id)
+        if (!horario) {
+            return res.status(404).json({
+                msg: "Horario no encontrado"
+            })
+        }
+
+        // Si envían horas, validamos el formato
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]?$/;
+        if (req.body.hra_inicio && !timeRegex.test(req.body.hra_inicio)) {
+            return res.status(400).json({ msg: "La hora de inicio no tiene un formato válido (HH:MM)." });
+        }
+        if (req.body.hra_fin && !timeRegex.test(req.body.hra_fin)) {
+            return res.status(400).json({ msg: "La hora de finalización no tiene un formato válido (HH:MM)." });
+        }
+
+        // Si envían salón, formateamos a MAYÚSCULAS
+        if (req.body.salon) {
+            req.body.salon = req.body.salon.trim().toUpperCase();
+        }
+
+        // Si envían cupo, validamos que sea positivo
+        if (req.body.cupo && (isNaN(req.body.cupo) || parseInt(req.body.cupo) <= 0)) {
+            return res.status(400).json({ msg: "El cupo debe ser un número entero positivo." });
+        }
+
+        // Si envían modalidad, validamos el ENUM de destino
+        if (req.body.modalidad) {
+            const modClean = req.body.modalidad.trim().toLowerCase();
+            if (modClean === 'presencial') req.body.modalidad = 'Presencial';
+            else if (modClean === 'en linea' || modClean === 'en línea') req.body.modalidad = 'En linea';
+            else {
+                return res.status(400).json({ msg: "La modalidad debe ser 'Presencial' o 'En linea'." });
+            }
+        }
+
+        // Procesar los días booleanos si es que vienen en el body para actualizarlos correctamente
+        const diasCampos = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        diasCampos.forEach(dia => {
+            if (req.body[dia] !== undefined) {
+                req.body[dia] = req.body[dia] === true || req.body[dia] === 'true';
+            }
+        });
+
+        await horario.update(req.body)
+
+        return res.status(200).json({
+            msg: "Horario actualizado exitosamente",
+            horario
+        })
+
+    } catch (error) {
+        console.error("Error al actualizar:", error)
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            return res.status(400).json({
+                msg: "Este horario ya entra en conflicto con un registro único existente."
+            })
+        }
+        return res.status(500).json({
+            msg: "Hubo un error en el servidor, intentelo de nuevo más tarde."
+        })
+    }
+}
+
+// Función para eliminar un horario por su ID (DELETE)
+const eliminarHorario = async (req, res) => {
+    const { id } = req.params
+
+    try {
+        const horario = await Horario.findByPk(id)
+        if (!horario) {
+            return res.status(404).json({
+                msg: "Horario no encontrado"
+            })
+        }
+
+        await horario.destroy()
+        return res.status(200).json({
+            msg: "Horario eliminado exitosamente"
+        })
+
+    } catch (error) {
+        console.error("Error al eliminar:", error)
+        return res.status(500).json({
+            msg: "Hubo un error en el servidor, intentelo de nuevo más tarde."
+        })
+    }
+}
+
 export {
     inicioHorario,
-    registroHorario
+    registroHorario,
+    obtenerHorarios,
+    obtenerHorario,
+    actualizarHorario,
+    eliminarHorario
 }
