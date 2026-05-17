@@ -5,6 +5,9 @@ import materiaRouter from "./routes/materia_routes.js"
 import grupoRouter from "./routes/grupo_routes.js"       
 import profesorRouter from "./routes/profesor_routes.js" 
 import horarioRouter from "./routes/horario_routes.js"   
+import historialRouter from "./routes/historial_routes.js"
+import grupoMateriaRouter from "./routes/grupo_materia_routes.js"
+import inscripcionRouter from "./routes/inscripcion_routes.js" 
 import db from "./config/db.js"
 import './models/relaciones.js'
 
@@ -35,6 +38,9 @@ app.use("/materias", materiaRouter)
 app.use("/grupos", grupoRouter)         
 app.use("/profesores", profesorRouter)
 app.use("/horarios", horarioRouter)     
+app.use("/historial-academico", historialRouter)
+app.use("/grupo-materia", grupoMateriaRouter)
+app.use("/inscripciones", inscripcionRouter) 
 
 // Definiendo el puerto
 const port = 4800 
