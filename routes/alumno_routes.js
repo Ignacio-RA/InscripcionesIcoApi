@@ -1,5 +1,6 @@
 import express, { Router } from "express";
 import { inicio, registroAlumno, obtenerAlumnos, obtenerAlumno, actualizarAlumno,eliminarAlumno} from "../controllers/alumnoController.js";
+import { login } from "../controllers/loginController.js";
 
 
 const alumnoRouter = express.Router();
@@ -20,5 +21,8 @@ alumnoRouter.patch('/:id',actualizarAlumno)
 
 //Ruta para eliminar un alumno por su ID (DELETE)
 alumnoRouter.delete('/:id',eliminarAlumno)
+
+//Ruta para iniciar sesion (LOGIN)
+alumnoRouter.post('/login',login)
 
 export default alumnoRouter;
