@@ -17,7 +17,36 @@ const registroHorario = async (req, res) => {
             hra_inicio, hra_fin, salon, cupo, modalidad 
         } = req.body
 
-        // Validación y asignación por defecto para los días (Booleanos)
+        // 1. Validación de casillas vacías para los días de la semana
+        if (
+            lunes === undefined || lunes === '' ||
+            martes === undefined || martes === '' ||
+            miercoles === undefined || miercoles === '' ||
+            jueves === undefined || jueves === '' ||
+            viernes === undefined || viernes === '' ||
+            sabado === undefined || sabado === ''
+        ) {
+            return res.status(400).json({
+                msg: "No se debe dejar vacía ninguna casilla de los días de la semana. Debe especificar true o false para cada uno."
+            });
+        }
+
+        // 2. Validación de casillas vacías para horas, salón y CUPO
+        if (!hra_inicio || hra_inicio.trim() === "") {
+            return res.status(400).json({ msg: "La hora de inicio es obligatoria y no debe quedar vacía." });
+        }
+        if (!hra_fin || hra_fin.trim() === "") {
+            return res.status(400).json({ msg: "La hora de finalización es obligatoria y no debe quedar vacía." });
+        }
+        if (!salon || salon.trim() === "") {
+            return res.status(400).json({ msg: "El salón es obligatorio y no debe quedar vacío." });
+        }
+        // Nueva validación de existencia para cupo
+        if (cupo === undefined || cupo === null || cupo.toString().trim() === "") {
+            return res.status(400).json({ msg: "El cupo es obligatorio y no debe quedar vacío." });
+        }
+
+        // Asignación segura de días una vez confirmado que no están vacíos
         const dias = {
             lunes: lunes === true || lunes === 'true',
             martes: martes === true || martes === 'true',
@@ -27,25 +56,18 @@ const registroHorario = async (req, res) => {
             sabado: sabado === true || sabado === 'true'
         }
 
-        // Validación de horas (Deben estar presentes)
-        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]?$/; // Formato HH:MM
-        if (!hra_inicio || !timeRegex.test(hra_inicio)) {
-            return res.status(400).json({
-                msg: "La hora de inicio es obligatoria y debe tener un formato válido (HH:MM)."
-            });
+        // 3. Validación de formato de horas (HH:MM)
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]?$/;
+        if (!timeRegex.test(hra_inicio)) {
+            return res.status(400).json({ msg: "La hora de inicio debe tener un formato válido (HH:MM)." });
         }
-        if (!hra_fin || !timeRegex.test(hra_fin)) {
-            return res.status(400).json({
-                msg: "La hora de finalización es obligatoria y debe tener un formato válido (HH:MM)."
-            });
+        if (!timeRegex.test(hra_fin)) {
+            return res.status(400).json({ msg: "La hora de finalización debe tener un formato válido (HH:MM)." });
         }
 
-        // Validación de salón y cupo
-        if (!salon || salon.trim() === "") {
-            return res.status(400).json({ msg: "El salón es obligatorio." });
-        }
-        if (!cupo || isNaN(cupo) || parseInt(cupo) <= 0) {
-            return res.status(400).json({ msg: "El cupo es obligatorio y debe ser un número entero positivo." });
+        // 4. Validación de valor para el cupo (Debe ser entero positivo)
+        if (isNaN(cupo) || parseInt(cupo) <= 0) {
+            return res.status(400).json({ msg: "El cupo debe ser un número entero positivo mayor a cero." });
         }
 
         // Validación de modalidad (Basado en el ENUM 'Presencial' o 'En linea')
@@ -56,8 +78,8 @@ const registroHorario = async (req, res) => {
             if (modClean === 'en linea' || modClean === 'en línea') modalidadFormateada = 'En linea';
         }
 
-        const modalidadesValidas = ['Presencial', 'En linea'];
-        if (!modalidadFormateada || !modalidadesValidas.includes(modalidadFormateada)) {
+        const modalitiesValidas = ['Presencial', 'En linea'];
+        if (!modalidadFormateada || !modalitiesValidas.includes(modalidadFormateada)) {
             return res.status(400).json({
                 msg: "La modalidad no es válida. Debe ser 'Presencial' o 'En linea'."
             });
@@ -86,16 +108,10 @@ const registroHorario = async (req, res) => {
 
     } catch (error) {
         console.error("error al registrar horario", error)
-
         if (error.name === 'SequelizeUniqueConstraintError') {
-            return res.status(400).json({
-                msg: "Este horario ya se encuentra registrado."
-            })
+            return res.status(400).json({ msg: "Este horario ya se encuentra registrado." })
         }
-
-        return res.status(500).json({
-            msg: "Hubo un error en el servidor, intente más tarde."
-        })
+        return res.status(500).json({ msg: "Hubo un error en el servidor, intente más tarde." })
     }
 }
 
@@ -156,12 +172,34 @@ const actualizarHorario = async (req, res) => {
     try {
         const horario = await Horario.findByPk(id)
         if (!horario) {
-            return res.status(404).json({
-                msg: "Horario no encontrado"
-            })
+            return res.status(404).json({ msg: "Horario no encontrado" })
         }
 
-        // Si envían horas, validamos el formato
+        // 1. Validación condicional para los días de la semana
+        const diasCampos = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        const intentaActualizarDias = diasCampos.some(dia => req.body[dia] !== undefined);
+
+        if (intentaActualizarDias) {
+            const tieneCasillasVacias = diasCampos.some(dia => req.body[dia] === undefined || req.body[dia] === '');
+            if (tieneCasillasVacias) {
+                return res.status(400).json({
+                    msg: "Si vas a modificar los días del horario, no debes dejar vacía ninguna casilla de la semana. Debes especificar true o false para cada uno."
+                });
+            }
+            diasCampos.forEach(dia => {
+                req.body[dia] = req.body[dia] === true || req.body[dia] === 'true';
+            });
+        }
+
+        // 2. Validación de casillas vacías para horas (si es que vienen en el body)
+        if (req.body.hra_inicio !== undefined && req.body.hra_inicio.trim() === "") {
+            return res.status(400).json({ msg: "La hora de inicio no puede quedar vacía." });
+        }
+        if (req.body.hra_fin !== undefined && req.body.hra_fin.trim() === "") {
+            return res.status(400).json({ msg: "La hora de finalización no puede quedar vacía." });
+        }
+
+        // 3. Validación de formato de horas
         const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]?$/;
         if (req.body.hra_inicio && !timeRegex.test(req.body.hra_inicio)) {
             return res.status(400).json({ msg: "La hora de inicio no tiene un formato válido (HH:MM)." });
@@ -170,14 +208,22 @@ const actualizarHorario = async (req, res) => {
             return res.status(400).json({ msg: "La hora de finalización no tiene un formato válido (HH:MM)." });
         }
 
-        // Si envían salón, formateamos a MAYÚSCULAS
-        if (req.body.salon) {
+        // 4. Validación de casilla vacía y formateo para el salón
+        if (req.body.salon !== undefined) {
+            if (req.body.salon.trim() === "") {
+                return res.status(400).json({ msg: "El salón no puede quedar vacío." });
+            }
             req.body.salon = req.body.salon.trim().toUpperCase();
         }
 
-        // Si envían cupo, validamos que sea positivo
-        if (req.body.cupo && (isNaN(req.body.cupo) || parseInt(req.body.cupo) <= 0)) {
-            return res.status(400).json({ msg: "El cupo debe ser un número entero positivo." });
+        // 5. NUEVA Validación de casilla vacía y valor para el CUPO
+        if (req.body.cupo !== undefined) {
+            if (req.body.cupo === null || req.body.cupo.toString().trim() === "") {
+                return res.status(400).json({ msg: "El cupo no puede quedar vacío." });
+            }
+            if (isNaN(req.body.cupo) || parseInt(req.body.cupo) <= 0) {
+                return res.status(400).json({ msg: "El cupo debe ser un número entero positivo." });
+            }
         }
 
         // Si envían modalidad, validamos el ENUM de destino
@@ -190,14 +236,6 @@ const actualizarHorario = async (req, res) => {
             }
         }
 
-        // Procesar los días booleanos si es que vienen en el body para actualizarlos correctamente
-        const diasCampos = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-        diasCampos.forEach(dia => {
-            if (req.body[dia] !== undefined) {
-                req.body[dia] = req.body[dia] === true || req.body[dia] === 'true';
-            }
-        });
-
         await horario.update(req.body)
 
         return res.status(200).json({
@@ -208,13 +246,9 @@ const actualizarHorario = async (req, res) => {
     } catch (error) {
         console.error("Error al actualizar:", error)
         if (error.name === 'SequelizeUniqueConstraintError') {
-            return res.status(400).json({
-                msg: "Este horario ya entra en conflicto con un registro único existente."
-            })
+            return res.status(400).json({ msg: "Este horario ya entra en conflicto con un registro único existente." })
         }
-        return res.status(500).json({
-            msg: "Hubo un error en el servidor, intentelo de nuevo más tarde."
-        })
+        return res.status(500).json({ msg: "Hubo un error en el servidor, intentelo de nuevo más tarde." })
     }
 }
 

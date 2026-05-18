@@ -13,6 +13,32 @@ const registroInscripcion = async (req, res) => {
     try {
         const { id_gpo_materia, id_alumno } = req.body
 
+        // 1. Validación de casillas vacías (id_gpo_materia e id_alumno)
+        if (id_gpo_materia === undefined || id_gpo_materia === null || id_gpo_materia.toString().trim() === "") {
+            return res.status(400).json({
+                msg: "El ID del grupo-materia es obligatorio y no debe quedar vacío."
+            });
+        }
+
+        if (id_alumno === undefined || id_alumno === null || id_alumno.toString().trim() === "") {
+            return res.status(400).json({
+                msg: "El ID del alumno es obligatorio y no debe quedar vacío."
+            });
+        }
+
+        // 2. Validación extra: Asegurar que sean números válidos antes de consultar la BD
+        if (isNaN(id_gpo_materia) || parseInt(id_gpo_materia) <= 0) {
+            return res.status(400).json({
+                msg: "El ID del grupo-materia debe ser un número entero positivo válido."
+            });
+        }
+
+        if (isNaN(id_alumno) || parseInt(id_alumno) <= 0) {
+            return res.status(400).json({
+                msg: "El ID del alumno debe ser un número entero positivo válido."
+            });
+        }
+
         // Verificar si existe la asignación grupo_materia
         const existeGrupoMateria = await Grupo_Materia.findByPk(id_gpo_materia)
         if (!existeGrupoMateria) {
@@ -138,16 +164,36 @@ const actualizarInscripcion = async (req, res) => {
             return res.status(404).json({ msg: "Inscripción no encontrada" })
         }
 
-        // Si se intenta cambiar el grupo-materia, validar que exista
-        if (req.body.id_gpo_materia) {
+        // 1. Validación condicional para id_gpo_materia (si viene en el body)
+        if (req.body.id_gpo_materia !== undefined) {
+            // Verificar que no esté vacío o nulo
+            if (req.body.id_gpo_materia === null || req.body.id_gpo_materia.toString().trim() === "") {
+                return res.status(400).json({ msg: "El ID del grupo-materia no puede quedar vacío." });
+            }
+            // Verificar que sea un número válido
+            if (isNaN(req.body.id_gpo_materia) || parseInt(req.body.id_gpo_materia) <= 0) {
+                return res.status(400).json({ msg: "El ID del grupo-materia debe ser un número entero positivo válido." });
+            }
+
+            // Validar existencia en la base de datos
             const existeGrupoMateria = await Grupo_Materia.findByPk(req.body.id_gpo_materia)
             if (!existeGrupoMateria) {
                 return res.status(404).json({ msg: "El nuevo ID de Grupo-Materia no existe." })
             }
         }
 
-        // Si se intenta cambiar el alumno, validar que exista
-        if (req.body.id_alumno) {
+        // 2. Validación condicional para id_alumno (si viene en el body)
+        if (req.body.id_alumno !== undefined) {
+            // Verificar que no esté vacío o nulo
+            if (req.body.id_alumno === null || req.body.id_alumno.toString().trim() === "") {
+                return res.status(400).json({ msg: "El ID del alumno no puede quedar vacío." });
+            }
+            // Verificar que sea un número válido
+            if (isNaN(req.body.id_alumno) || parseInt(req.body.id_alumno) <= 0) {
+                return res.status(400).json({ msg: "El ID del alumno debe ser un número entero positivo válido." });
+            }
+
+            // Validar existencia en la base de datos
             const existeAlumno = await Alumno.findByPk(req.body.id_alumno)
             if (!existeAlumno) {
                 return res.status(404).json({ msg: "El alumno no existe." })

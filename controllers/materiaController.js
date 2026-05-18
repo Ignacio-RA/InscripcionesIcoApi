@@ -14,10 +14,11 @@ const registroMateria = async (req, res) => {
     try {
         const { cve_materia, nombre, semestre, creditos, tipo, laboratorio } = req.body
 
-        // Validación de cve_materia (Debe ser un número entero positivo)
-        if (!cve_materia || isNaN(cve_materia) || parseInt(cve_materia) <= 0) {
+        // 1. Validación de cve_materia (Debe tener exactamente 4 dígitos numéricos)
+        const cveRegex = /^\d{4}$/;
+        if (!cve_materia || !cveRegex.test(cve_materia.toString())) {
             return res.status(400).json({
-                msg: "La clave de la materia es obligatoria y debe ser un número entero positivo."
+                msg: "La clave de la materia es obligatoria y debe tener exactamente 4 dígitos numéricos."
             });
         }
 
@@ -44,7 +45,7 @@ const registroMateria = async (req, res) => {
 
         // Creación del registro en la base de datos
         const nuevaMateria = await Materia.create({
-            cve_materia: parseInt(cve_materia),
+            cve_materia: parseInt(cve_materia), // Se guarda convertido a entero
             nombre: nombreMayus,
             semestre: semestre.toString(),
             creditos: parseInt(creditos),
@@ -132,9 +133,14 @@ const actualizarMateria = async (req, res) => {
             })
         }
 
-        // Si envían cve_materia, validamos que sea número entero positivo
-        if (req.body.cve_materia && (isNaN(req.body.cve_materia) || parseInt(req.body.cve_materia) <= 0)) {
-            return res.status(400).json({ msg: "La clave de la materia debe ser un número entero positivo." });
+        // 1. Si envían cve_materia, validamos que tenga exactamente 4 dígitos numéricos
+        if (req.body.cve_materia !== undefined) {
+            const cveRegex = /^\d{4}$/;
+            if (!cveRegex.test(req.body.cve_materia.toString())) {
+                return res.status(400).json({ 
+                    msg: "La clave de la materia debe tener exactamente 4 dígitos numéricos." 
+                });
+            }
         }
 
         // Si envían nombre, convertimos a MAYÚSCULAS

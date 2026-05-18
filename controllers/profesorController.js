@@ -19,9 +19,11 @@ const registroProfesor = async (req, res) => {
             return res.status(400).json({ msg: "El nombre del profesor es obligatorio." });
         }
         if (!ap_paterno || ap_paterno.trim() === "") {
-            return res.status(400).json({ msg: "El apellido paternal es obligatorio." });
+            return res.status(400).json({ msg: "El apellido paterno es obligatorio." });
         }
-
+        if (!ap_materno || ap_materno.trim() === "") {
+            return res.status(400).json({ msg: "El apellido materno es obligatorio." });
+        }
         // Validación de formato de correo electrónico
         const correoRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!correo || !correoRegex.test(correo)) {

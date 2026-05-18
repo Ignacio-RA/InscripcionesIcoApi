@@ -18,7 +18,35 @@ const registroGrupoMateria = async (req, res) => {
     try {
         const { id_grupo, id_materia, id_horario, id_profesor } = req.body
 
-        //  Verificar si existe el grupo
+        // 1. Validaciones para que ninguna celda quede vacía (control de undefined, null y strings vacíos)
+        if (id_grupo === undefined || id_grupo === null || id_grupo.toString().trim() === "") {
+            return res.status(400).json({ msg: "El ID del grupo es obligatorio y no debe quedar vacío." });
+        }
+        if (id_materia === undefined || id_materia === null || id_materia.toString().trim() === "") {
+            return res.status(400).json({ msg: "El ID de la materia es obligatorio y no debe quedar vacío." });
+        }
+        if (id_horario === undefined || id_horario === null || id_horario.toString().trim() === "") {
+            return res.status(400).json({ msg: "El ID del horario es obligatorio y no debe quedar vacío." });
+        }
+        if (id_profesor === undefined || id_profesor === null || id_profesor.toString().trim() === "") {
+            return res.status(400).json({ msg: "El ID del profesor es obligatorio y no debe quedar vacío." });
+        }
+
+        // 2. Validaciones de formato (Asegurar que sean números enteros positivos válidos)
+        if (isNaN(id_grupo) || parseInt(id_grupo) <= 0) {
+            return res.status(400).json({ msg: "El ID del grupo debe ser un número entero positivo válido." });
+        }
+        if (isNaN(id_materia) || parseInt(id_materia) <= 0) {
+            return res.status(400).json({ msg: "El ID de la materia debe ser un número entero positivo válido." });
+        }
+        if (isNaN(id_horario) || parseInt(id_horario) <= 0) {
+            return res.status(400).json({ msg: "El ID del horario debe ser un número entero positivo válido." });
+        }
+        if (isNaN(id_profesor) || parseInt(id_profesor) <= 0) {
+            return res.status(400).json({ msg: "El ID del profesor debe ser un número entero positivo válido." });
+        }
+
+        // 3. Verificar si existe el grupo en la BD
         const existeGrupo = await Grupo.findByPk(id_grupo)
         if (!existeGrupo) {
             return res.status(404).json({
@@ -26,7 +54,7 @@ const registroGrupoMateria = async (req, res) => {
             })
         }
 
-        //  Verificar si existe la materia
+        // 4. Verificar si existe la materia en la BD
         const existeMateria = await Materia.findByPk(id_materia)
         if (!existeMateria) {
             return res.status(404).json({
@@ -34,7 +62,7 @@ const registroGrupoMateria = async (req, res) => {
             })
         }
 
-        // Verificar si existe el horario
+        // 5. Verificar si existe el horario en la BD
         const existeHorario = await Horario.findByPk(id_horario)
         if (!existeHorario) {
             return res.status(404).json({
@@ -42,7 +70,7 @@ const registroGrupoMateria = async (req, res) => {
             })
         }
 
-        //  Verificar si existe el profesor
+        // 6. Verificar si existe el profesor en la BD
         const existeProfesor = await Profesor.findByPk(id_profesor)
         if (!existeProfesor) {
             return res.status(404).json({
@@ -50,12 +78,12 @@ const registroGrupoMateria = async (req, res) => {
             })
         }
 
-        // Creación del registro en la base de datos
+        // Creación del registro en la base de datos con tipos de datos limpios
         const nuevaAsignacion = await Grupo_Materia.create({
-            id_grupo,
-            id_materia,
-            id_horario,
-            id_profesor
+            id_grupo: parseInt(id_grupo),
+            id_materia: parseInt(id_materia),
+            id_horario: parseInt(id_horario),
+            id_profesor: parseInt(id_profesor)
         })
 
         return res.status(201).json({
@@ -145,30 +173,71 @@ const actualizarGrupoMateria = async (req, res) => {
             return res.status(404).json({ msg: "Asignación Grupo-Materia no encontrada" })
         }
 
-        // Si se intenta cambiar el grupo, validar que exista
-        if (req.body.id_grupo) {
+        // 1. Validación condicional para id_grupo
+        if (req.body.id_grupo !== undefined) {
+            if (req.body.id_grupo === null || req.body.id_grupo.toString().trim() === "") {
+                return res.status(400).json({ msg: "El ID del grupo no puede quedar vacío." });
+            }
+            if (isNaN(req.body.id_grupo) || parseInt(req.body.id_grupo) <= 0) {
+                return res.status(400).json({ msg: "El ID del grupo debe ser un número entero positivo válido." });
+            }
+            
+            // Si es válido, verificar que exista en la BD
             const existeGrupo = await Grupo.findByPk(req.body.id_grupo)
             if (!existeGrupo) return res.status(404).json({ msg: "El nuevo ID de grupo no existe." })
+            
+            req.body.id_grupo = parseInt(req.body.id_grupo);
         }
 
-        // Si se intenta cambiar la materia, validar que exista
-        if (req.body.id_materia) {
+        // 2. Validación condicional para id_materia
+        if (req.body.id_materia !== undefined) {
+            if (req.body.id_materia === null || req.body.id_materia.toString().trim() === "") {
+                return res.status(400).json({ msg: "El ID de la materia no puede quedar vacío." });
+            }
+            if (isNaN(req.body.id_materia) || parseInt(req.body.id_materia) <= 0) {
+                return res.status(400).json({ msg: "El ID de la materia debe ser un número entero positivo válido." });
+            }
+
+            // Si es válido, verificar que exista en la BD
             const existeMateria = await Materia.findByPk(req.body.id_materia)
             if (!existeMateria) return res.status(404).json({ msg: "El nuevo ID de materia no existe." })
+            
+            req.body.id_materia = parseInt(req.body.id_materia);
         }
 
-        // Si se intenta cambiar el horario, validar que exista
-        if (req.body.id_horario) {
+        // 3. Validación condicional para id_horario
+        if (req.body.id_horario !== undefined) {
+            if (req.body.id_horario === null || req.body.id_horario.toString().trim() === "") {
+                return res.status(400).json({ msg: "El ID del horario no puede quedar vacío." });
+            }
+            if (isNaN(req.body.id_horario) || parseInt(req.body.id_horario) <= 0) {
+                return res.status(400).json({ msg: "El ID del horario debe ser un número entero positivo válido." });
+            }
+
+            // Si es válido, verificar que exista en la BD
             const existeHorario = await Horario.findByPk(req.body.id_horario)
             if (!existeHorario) return res.status(404).json({ msg: "El nuevo ID de horario no existe." })
+            
+            req.body.id_horario = parseInt(req.body.id_horario);
         }
 
-        // Si se intenta cambiar el profesor, validar que exista
-        if (req.body.id_profesor) {
+        // 4. Validación condicional para id_profesor
+        if (req.body.id_profesor !== undefined) {
+            if (req.body.id_profesor === null || req.body.id_profesor.toString().trim() === "") {
+                return res.status(400).json({ msg: "El ID del profesor no puede quedar vacío." });
+            }
+            if (isNaN(req.body.id_profesor) || parseInt(req.body.id_profesor) <= 0) {
+                return res.status(400).json({ msg: "El ID del profesor debe ser un número entero positivo válido." });
+            }
+
+            // Si es válido, verificar que exista en la BD
             const existeProfesor = await Profesor.findByPk(req.body.id_profesor)
             if (!existeProfesor) return res.status(404).json({ msg: "El nuevo ID de profesor no existe." })
+            
+            req.body.id_profesor = parseInt(req.body.id_profesor);
         }
 
+        // Si todo está correcto, proceder con la actualización parcial
         await asignacion.update(req.body)
 
         return res.status(200).json({

@@ -10,9 +10,13 @@ import grupoMateriaRouter from "./routes/grupo_materia_routes.js"
 import inscripcionRouter from "./routes/inscripcion_routes.js" 
 import db from "./config/db.js"
 import './models/relaciones.js'
+import cors from 'cors'
 
 // Crear la aplicación
 const app = express()
+
+//Habilitar CORS para la ruta de REACT
+app.use(cors({ origin: 'http://localhost:5173'}))
 
 // Accesos a los datos del formulario y JSON
 app.use(express.urlencoded({ extended: true }))
