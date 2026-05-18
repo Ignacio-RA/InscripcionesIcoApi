@@ -1,4 +1,5 @@
 import express from "express"
+import administradorRouter from "./routes/administrador_routes.js"
 import router from "./routes/inicio_router.js"
 import alumnoRouter from "./routes/alumno_routes.js"
 import materiaRouter from "./routes/materia_routes.js"   
@@ -26,7 +27,7 @@ app.use(express.json())
 const conectarDB = async () => {
     try {
         await db.authenticate();
-        await db.sync(); 
+        await db.sync() 
         console.log("Conexion exitosa y tablas sincronizadas");
     } catch (error) {
         console.log("Error al conectar o sincronizar:", error);
@@ -37,6 +38,7 @@ conectarDB();
 
 // Routing
 app.use("/", router)
+app.use("/administrador",administradorRouter)
 app.use("/alumnos", alumnoRouter)
 app.use("/materias", materiaRouter)     
 app.use("/grupos", grupoRouter)         

@@ -1,4 +1,5 @@
 import Alumno from "./alumno.js";
+import Administrador from "./administrador.js";
 import Grupo from "./grupo.js";
 import Horario from "./horario.js";
 import Grupo_Materia from "./grupo_materias.js";
@@ -120,6 +121,7 @@ Grupo_Materia.belongsTo(Profesor, {
 
 export {
     Alumno,
+    Administrador,
     Grupo,
     Horario,
     Grupo_Materia,
