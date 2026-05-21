@@ -17,7 +17,7 @@ import cors from 'cors'
 const app = express()
 
 //Habilitar CORS para la ruta de REACT
-app.use(cors({ origin: 'http://localhost:5173'}))
+app.use(cors({ origin: 'http://localhost:4173'}))
 
 // Accesos a los datos del formulario y JSON
 app.use(express.urlencoded({ extended: true }))
@@ -49,7 +49,7 @@ app.use("/grupo-materia", grupoMateriaRouter)
 app.use("/inscripciones", inscripcionRouter) 
 
 // Definiendo el puerto
-const port = 4800 
+const port = 3800 
 app.listen(port, () => {
     console.log(`Esperando peticiones en el puerto ${port}`)
 })
